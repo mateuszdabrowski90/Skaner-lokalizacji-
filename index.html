@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>BL Lokalizator</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f5f3;
+      --surface: #ffffff;
+      --surface2: #f0efeb;
+      --border: rgba(0,0,0,0.12);
+      --border2: rgba(0,0,0,0.22);
+      --text: #1a1a18;
+      --text2: #6b6b67;
+      --text3: #9b9b96;
+      --blue: #185fa5;
+      --blue-bg: #e6f1fb;
+      --blue-text: #0c447c;
+      --green: #0f6e56;
+      --green-bg: #e1f5ee;
+      --green-text: #085041;
+      --red: #a32d2d;
+      --red-bg: #fcebeb;
+      --red-text: #791f1f;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+      --amber-bg: #faeeda;
+      --amber-border: #fac775;
+      --amber-text: #854f0b;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --amber-bg: #412402;
+        --amber-border: #633806;
+        --amber-text: #fac775;
+        --bg: #1a1a18;
+        --surface: #242422;
+        --surface2: #2e2e2b;
+        --border: rgba(255,255,255,0.1);
+        --border2: rgba(255,255,255,0.2);
+        --text: #f0efe8;
+        --text2: #a0a09a;
+        --text3: #606058;
+        --blue: #85b7eb;
+        --blue-bg: #042c53;
+        --blue-text: #b5d4f4;
+        --green: #5dcaa5;
+        --green-bg: #04342c;
+        --green-text: #9fe1cb;
+        --red: #f09595;
+        --red-bg: #501313;
+        --red-text: #f7c1c1;
+      }
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      font-family: var(--font);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .topbar-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .topbar-sub { font-size: 12px; color: var(--text2); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
+
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--text3); display: inline-block; flex-shrink: 0;
+    }
+    .status-dot.ok { background: #1d9e75; }
+    .status-dot.err { background: #e24b4a; }
+
+    .settings-btn {
+      background: none;
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 7px 12px;
+      font-size: 13px;
+      color: var(--text2);
+      font-family: var(--font);
+      cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    .screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      gap: 12px;
+    }
+
+    .counter-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .counter-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      text-align: center;
+    }
+    .counter-val { font-size: 26px; font-weight: 600; color: var(--text); }
+    .counter-lbl { font-size: 11px; color: var(--text3); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .state-card {
+      width: 100%;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .state-icon { font-size: 48px; color: var(--text3); }
+    .state-icon.blue { color: var(--blue); }
+    .state-icon.green { color: var(--green); }
+    .state-icon.red { color: var(--red); }
+
+    .state-step {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text3);
+    }
+    .state-instr {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.25;
+    }
+    .state-sub {
+      font-size: 14px;
+      color: var(--text2);
+    }
+
+    .product-box {
+      width: 100%;
+      background: var(--surface2);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      text-align: left;
+    }
+    .product-name { font-size: 14px; font-weight: 500; color: var(--text); }
+    .product-sku { font-size: 12px; color: var(--text2); font-family: var(--mono); margin-top: 3px; }
+
+    .loc-badge {
+      background: var(--blue-bg);
+      color: var(--blue-text);
+      font-size: 20px;
+      font-weight: 600;
+      font-family: var(--mono);
+      padding: 8px 20px;
+      border-radius: var(--radius);
+      letter-spacing: 0.06em;
+    }
+
+    .input-row {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+    }
+    .input-row input {
+      flex: 1;
+      background: var(--surface);
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 11px 14px;
+      font-size: 15px;
+      color: var(--text);
+      font-family: var(--font);
+      outline: none;
+    }
+    .input-row input:focus { border-color: var(--blue); }
+    .input-row button {
+      background: var(--blue-bg);
+      border: none;
+      border-radius: var(--radius);
+      padding: 11px 16px;
+      color: var(--blue-text);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center;
+    }
+
+    .history-wrap { width: 100%; }
+    .history-title {
+      font-size: 11px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 8px;
+      padding: 0 2px;
+    }
+    .history-list { display: flex; flex-direction: column; gap: 6px; }
+    .history-item {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .h-name {
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      min-width: 0;
+    }
+    .h-loc {
+      font-size: 12px;
+      font-family: var(--mono);
+      background: var(--green-bg);
+      color: var(--green-text);
+      padding: 2px 8px;
+      border-radius: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .reset-btn {
+      width: 100%;
+      background: none;
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 12px;
+      font-size: 14px;
+      color: var(--red);
+      font-family: var(--font);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+
+    /* Settings */
+    .settings-panel {
+      width: 100%;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .settings-row { display: flex; flex-direction: column; gap: 6px; }
+    .settings-label { font-size: 13px; color: var(--text2); }
+    .settings-row input, .settings-row select {
+      background: var(--surface2);
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      font-size: 14px;
+      color: var(--text);
+      font-family: var(--font);
+      outline: none;
+      width: 100%;
+    }
+    .settings-row input:focus { border-color: var(--blue); }
+    .save-btn {
+      width: 100%;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: var(--font);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .back-btn {
+      width: 100%;
+      background: none;
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 12px;
+      font-size: 14px;
+      color: var(--text2);
+      font-family: var(--font);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+
+    .hidden { display: none !important; }
+
+    .quick-btn {
+      background: var(--surface);
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 10px 10px;
+      cursor: pointer;
+      text-align: center;
+      font-family: var(--font);
+      transition: background 0.1s;
+      min-height: 52px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+    .quick-btn:active { background: var(--surface2); }
+    .qb-label { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .qb-code { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+    .loc-btn { background: var(--blue-bg); border-color: transparent; }
+    .loc-btn .qb-code { color: var(--blue-text); font-size: 13px; font-weight: 600; }
+    .loc-btn:active { opacity: 0.75; }
+
+    /* Spinner animation */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinning { display: inline-block; animation: spin 1s linear infinite; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">BL Lokalizator</div>
+      <div class="topbar-sub">
+        <span class="status-dot" id="conn-dot"></span>
+        <span id="conn-label">Nie skonfigurowano</span>
+      </div>
+    </div>
+    <button class="settings-btn" onclick="toggleSettings()">
+      <i class="ti ti-settings"></i> Ustawienia
+    </button>
+  </div>
+
+  <!-- MAIN SCREEN -->
+  <div class="screen" id="main-screen">
+    <div class="counter-row">
+      <div class="counter-card">
+        <div class="counter-val" id="cnt-done">0</div>
+        <div class="counter-lbl">zapisanych</div>
+      </div>
+      <div class="counter-card">
+        <div class="counter-val" id="cnt-err">0</div>
+        <div class="counter-lbl">błędów</div>
+      </div>
+    </div>
+
+    <div class="state-card">
+      <i class="ti state-icon blue" id="state-icon"></i>
+      <div class="state-step" id="state-step">Krok 1 z 2</div>
+      <div class="state-instr" id="state-instr">Zeskanuj produkt</div>
+      <div class="state-sub" id="state-sub">Przyłóż skaner do kodu EAN produktu</div>
+      <div class="product-box hidden" id="product-box">
+        <div class="product-name" id="p-name"></div>
+        <div class="product-sku" id="p-sku"></div>
+      </div>
+      <div class="loc-badge hidden" id="loc-badge"></div>
+    </div>
+
+    <div style="width:100%;background:var(--amber-bg);border:0.5px solid var(--amber-border);border-radius:var(--radius);padding:9px 12px;display:flex;align-items:center;gap:8px;">
+      <i class="ti ti-flask" style="color:var(--amber-text);font-size:16px;flex-shrink:0;"></i>
+      <span style="font-size:12px;color:var(--amber-text);font-weight:500;">Tryb testowy — wpisuj kody ręcznie lub użyj przykładów poniżej</span>
+    </div>
+
+    <div class="input-row">
+      <input type="text" id="manual-in" placeholder="Wpisz kod i naciśnij Enter lub →" autocomplete="off" autocorrect="off" spellcheck="false" />
+      <button onclick="handleManual()"><i class="ti ti-arrow-right"></i></button>
+    </div>
+
+    <div style="width:100%;" id="quick-products-wrap">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;padding:0 2px;">Przykładowe produkty</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="quick-products">
+        <button class="quick-btn" onclick="quickScan('5901234123457')">
+          <div class="qb-label">Kabel HDMI 2m</div>
+          <div class="qb-code">5901234123457</div>
+        </button>
+        <button class="quick-btn" onclick="quickScan('4006381333931')">
+          <div class="qb-label">Baterie AA 4szt</div>
+          <div class="qb-code">4006381333931</div>
+        </button>
+        <button class="quick-btn" onclick="quickScan('5901738578000')">
+          <div class="qb-label">Słuchawki JBL</div>
+          <div class="qb-code">5901738578000</div>
+        </button>
+        <button class="quick-btn" onclick="quickScan('8806092380608')">
+          <div class="qb-label">Ładowarka 25W</div>
+          <div class="qb-code">8806092380608</div>
+        </button>
+      </div>
+    </div>
+
+    <div style="width:100%;" id="quick-locations-wrap" class="hidden">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;padding:0 2px;">Przykładowe lokalizacje</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <button class="quick-btn loc-btn" onclick="quickScan('A-01-01')"><div class="qb-code" style="font-size:14px;">A-01-01</div></button>
+        <button class="quick-btn loc-btn" onclick="quickScan('A-01-02')"><div class="qb-code" style="font-size:14px;">A-01-02</div></button>
+        <button class="quick-btn loc-btn" onclick="quickScan('B-02-03')"><div class="qb-code" style="font-size:14px;">B-02-03</div></button>
+        <button class="quick-btn loc-btn" onclick="quickScan('B-03-01')"><div class="qb-code" style="font-size:14px;">B-03-01</div></button>
+        <button class="quick-btn loc-btn" onclick="quickScan('C-01-05')"><div class="qb-code" style="font-size:14px;">C-01-05</div></button>
+        <button class="quick-btn loc-btn" onclick="quickScan('D-04-02')"><div class="qb-code" style="font-size:14px;">D-04-02</div></button>
+      </div>
+    </div>
+
+    <div class="history-wrap hidden" id="history-wrap">
+      <div class="history-title">Ostatnie operacje</div>
+      <div class="history-list" id="history-list"></div>
+    </div>
+
+    <button class="reset-btn hidden" id="reset-btn" onclick="resetAll()">
+      <i class="ti ti-refresh"></i> Nowa sesja
+    </button>
+  </div>
+
+  <!-- SETTINGS SCREEN -->
+  <div class="screen hidden" id="settings-screen">
+    <div class="settings-panel">
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;">Konfiguracja API</div>
+      <div class="settings-row">
+        <div class="settings-label">Klucz API BaseLinker</div>
+        <input type="password" id="api-key-in" placeholder="Wklej klucz API..." autocomplete="off" />
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">ID magazynu (Storage ID)</div>
+        <input type="text" id="storage-id-in" placeholder="np. db_1 lub bl_1" />
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">Tryb działania</div>
+        <select id="mode-sel">
+          <option value="demo">Demo — symulacja (bez zapisu)</option>
+          <option value="live">Produkcyjny — zapisuje do BaseLinker</option>
+        </select>
+      </div>
+      <button class="save-btn" onclick="saveSettings()">
+        <i class="ti ti-check"></i> Zapisz
+      </button>
+    </div>
+    <button class="back-btn" onclick="toggleSettings()">
+      <i class="ti ti-arrow-left"></i> Wróć do skanowania
+    </button>
+  </div>
+</div>
+
+<!-- Hidden input trap for hardware scanner -->
+<input type="text" id="scan-trap" style="position:fixed;left:-9999px;width:1px;height:1px;opacity:0;" autocomplete="off" autocorrect="off" spellcheck="false" />
+
+<script>
+  const STATES = { PRODUCT: 0, LOCATION: 1, SAVING: 2, SUCCESS: 3, ERROR: 4 };
+  let appState = STATES.PRODUCT;
+  let currentProduct = null;
+  let history = [];
+  let cntDone = 0, cntErr = 0;
+  let cfg = { apiKey: '', storageId: 'db_1', mode: 'demo' };
+  let scanBuffer = '';
+  let scanTimer = null;
+  let settingsOpen = false;
+
+  const DEMO_DB = {
+    '5901234123457': { id: '12345', name: 'Kabel HDMI 2.0 2m', sku: 'KAB-HDMI-2M' },
+    '4006381333931': { id: '22222', name: 'Baterie AA Duracell 4szt', sku: 'BAT-AA-DUR4' },
+    '5901738578000': { id: '33333', name: 'Słuchawki JBL Tune 500BT', sku: 'SLU-JBL-T500' },
+    '8806092380608': { id: '44444', name: 'Ładowarka Samsung 25W USB-C', sku: 'LAD-SAM-25W' },
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function loadCfg() {
+    try {
+      const s = localStorage.getItem('bl_loc_v2');
+      if (s) cfg = { ...cfg, ...JSON.parse(s) };
+    } catch(e) {}
+    $('api-key-in').value = cfg.apiKey || '';
+    $('storage-id-in').value = cfg.storageId || 'db_1';
+    $('mode-sel').value = cfg.mode || 'demo';
+    updateStatus();
+  }
+
+  function saveSettings() {
+    cfg.apiKey = $('api-key-in').value.trim();
+    cfg.storageId = $('storage-id-in').value.trim() || 'db_1';
+    cfg.mode = $('mode-sel').value;
+    try { localStorage.setItem('bl_loc_v2', JSON.stringify(cfg)); } catch(e) {}
+    updateStatus();
+    toggleSettings();
+  }
+
+  function updateStatus() {
+    const dot = $('conn-dot');
+    const lbl = $('conn-label');
+    if (cfg.mode === 'demo') {
+      dot.className = 'status-dot';
+      lbl.textContent = 'Tryb demo';
+    } else if (cfg.apiKey) {
+      dot.className = 'status-dot ok';
+      lbl.textContent = 'Produkcyjny · ' + cfg.storageId;
+    } else {
+      dot.className = 'status-dot err';
+      lbl.textContent = 'Brak klucza API';
+    }
+  }
+
+  function toggleSettings() {
+    settingsOpen = !settingsOpen;
+    $('main-screen').classList.toggle('hidden', settingsOpen);
+    $('settings-screen').classList.toggle('hidden', !settingsOpen);
+    if (!settingsOpen) focusTrap();
+  }
+
+  const ICONS = {
+    [STATES.PRODUCT]: 'ti-barcode',
+    [STATES.LOCATION]: 'ti-map-pin',
+    [STATES.SAVING]: 'ti-loader-2',
+    [STATES.SUCCESS]: 'ti-circle-check',
+    [STATES.ERROR]: 'ti-alert-circle',
+  };
+  const ICON_COLORS = {
+    [STATES.PRODUCT]: 'blue',
+    [STATES.LOCATION]: 'blue',
+    [STATES.SAVING]: 'blue',
+    [STATES.SUCCESS]: 'green',
+    [STATES.ERROR]: 'red',
+  };
+
+  function renderState(s, product, location) {
+    const icon = $('state-icon');
+    icon.className = 'ti ' + ICONS[s] + ' state-icon ' + ICON_COLORS[s];
+    if (s === STATES.SAVING) icon.classList.add('spinning');
+
+    $('product-box').classList.add('hidden');
+    $('loc-badge').classList.add('hidden');
+
+    if (s === STATES.PRODUCT) {
+      $('state-step').textContent = 'Krok 1 z 2';
+      $('state-instr').textContent = 'Zeskanuj produkt';
+      $('state-sub').textContent = 'Przyłóż skaner do kodu EAN produktu';
+    } else if (s === STATES.LOCATION) {
+      $('state-step').textContent = 'Krok 2 z 2';
+      $('state-instr').textContent = 'Zeskanuj lokalizację';
+      $('state-sub').textContent = 'Przyłóż skaner do kodu na regale';
+      if (product) {
+        $('p-name').textContent = product.name || ('ID: ' + product.id);
+        $('p-sku').textContent = product.sku ? 'SKU: ' + product.sku : 'ID: ' + product.id;
+        $('product-box').classList.remove('hidden');
+      }
+    } else if (s === STATES.SAVING) {
+      $('state-step').textContent = 'Zapisywanie...';
+      $('state-instr').textContent = 'Trwa zapis do BaseLinker';
+      $('state-sub').textContent = '';
+      if (product) {
+        $('p-name').textContent = product.name || ('ID: ' + product.id);
+        $('p-sku').textContent = product.sku ? 'SKU: ' + product.sku : 'ID: ' + product.id;
+        $('product-box').classList.remove('hidden');
+      }
+      if (location) {
+        $('loc-badge').textContent = location;
+        $('loc-badge').classList.remove('hidden');
+      }
+    } else if (s === STATES.SUCCESS) {
+      $('state-step').textContent = 'Zapisano!';
+      $('state-instr').textContent = product ? (product.name || product.id) : '';
+      $('state-sub').textContent = '';
+      if (location) {
+        $('loc-badge').textContent = location;
+        $('loc-badge').classList.remove('hidden');
+      }
+    } else if (s === STATES.ERROR) {
+      $('state-step').textContent = 'Błąd';
+      $('state-instr').textContent = 'Nie znaleziono produktu';
+      $('state-sub').textContent = 'Sprawdź kod i spróbuj ponownie';
+    }
+    updateQuickButtons(s);
+  }
+
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  async function lookupProduct(ean) {
+    if (cfg.mode === 'demo') {
+      await delay(350);
+      if (DEMO_DB[ean]) return DEMO_DB[ean];
+      return { id: 'BL-' + ean.slice(-5), name: 'Produkt ' + ean.slice(-4), sku: 'SKU-' + ean.slice(-4) };
+    }
+    const body = new URLSearchParams({
+      token: cfg.apiKey,
+      method: 'getInventoryProductsList',
+      parameters: JSON.stringify({ storage_id: cfg.storageId, filter_ean: ean })
+    });
+    const res = await fetch('https://api.baselinker.com/connector.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    });
+    const data = await res.json();
+    if (data.status === 'SUCCESS' && data.products) {
+      const keys = Object.keys(data.products);
+      if (keys.length > 0) {
+        const p = data.products[keys[0]];
+        return { id: keys[0], name: p.name, sku: p.sku };
+      }
+    }
+    return null;
+  }
+
+  async function saveLocation(productId, loc) {
+    if (cfg.mode === 'demo') {
+      await delay(500);
+      return true;
+    }
+    const body = new URLSearchParams({
+      token: cfg.apiKey,
+      method: 'updateInventoryProductsStock',
+      parameters: JSON.stringify({
+        storage_id: cfg.storageId,
+        products: [{ product_id: productId, stock: { location: loc } }]
+      })
+    });
+    const res = await fetch('https://api.baselinker.com/connector.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    });
+    const data = await res.json();
+    return data.status === 'SUCCESS';
+  }
+
+  async function handleScan(code) {
+    code = code.trim();
+    if (!code || appState === STATES.SAVING) return;
+    $('manual-in').value = '';
+
+    if (appState === STATES.PRODUCT) {
+      appState = STATES.SAVING;
+      renderState(STATES.SAVING, null, null);
+      const product = await lookupProduct(code);
+      if (!product) {
+        cntErr++;
+        $('cnt-err').textContent = cntErr;
+        appState = STATES.ERROR;
+        renderState(STATES.ERROR);
+        await delay(2000);
+        appState = STATES.PRODUCT;
+        renderState(STATES.PRODUCT);
+      } else {
+        currentProduct = product;
+        appState = STATES.LOCATION;
+        renderState(STATES.LOCATION, product, null);
+      }
+    } else if (appState === STATES.LOCATION) {
+      appState = STATES.SAVING;
+      renderState(STATES.SAVING, currentProduct, code);
+      const ok = await saveLocation(currentProduct.id, code);
+      if (ok) {
+        cntDone++;
+        $('cnt-done').textContent = cntDone;
+        history.unshift({ product: currentProduct, location: code });
+        if (history.length > 15) history.pop();
+        renderHistory();
+        appState = STATES.SUCCESS;
+        renderState(STATES.SUCCESS, currentProduct, code);
+        await delay(1400);
+        currentProduct = null;
+        appState = STATES.PRODUCT;
+        renderState(STATES.PRODUCT);
+      } else {
+        cntErr++;
+        $('cnt-err').textContent = cntErr;
+        appState = STATES.ERROR;
+        renderState(STATES.ERROR);
+        await delay(2000);
+        appState = STATES.LOCATION;
+        renderState(STATES.LOCATION, currentProduct, null);
+      }
+    }
+    focusTrap();
+  }
+
+  function handleManual() {
+    const v = $('manual-in').value.trim();
+    if (v) handleScan(v);
+  }
+
+  function quickScan(code) {
+    $('manual-in').value = '';
+    handleScan(code);
+  }
+
+  function updateQuickButtons(s) {
+    const locWrap = $('quick-locations-wrap');
+    const prodWrap = $('quick-products-wrap');
+    if (s === STATES.LOCATION) {
+      locWrap.classList.remove('hidden');
+      prodWrap.style.display = 'none';
+    } else if (s === STATES.PRODUCT) {
+      locWrap.classList.add('hidden');
+      prodWrap.style.display = 'block';
+    }
+  }
+
+  function renderHistory() {
+    const wrap = $('history-wrap');
+    const list = $('history-list');
+    const btn = $('reset-btn');
+    if (!history.length) {
+      wrap.classList.add('hidden');
+      btn.classList.add('hidden');
+      return;
+    }
+    wrap.classList.remove('hidden');
+    btn.classList.remove('hidden');
+    list.innerHTML = history.map(h => `
+      <div class="history-item">
+        <div class="h-name">${h.product.name || h.product.id}</div>
+        <div class="h-loc">${h.location}</div>
+      </div>
+    `).join('');
+  }
+
+  function resetAll() {
+    history = []; cntDone = 0; cntErr = 0; currentProduct = null;
+    appState = STATES.PRODUCT;
+    $('cnt-done').textContent = '0';
+    $('cnt-err').textContent = '0';
+    renderState(STATES.PRODUCT);
+    renderHistory();
+    focusTrap();
+  }
+
+  function focusTrap() {
+    if (!settingsOpen) {
+      setTimeout(() => $('scan-trap').focus(), 50);
+    }
+  }
+
+  $('scan-trap').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      const v = scanBuffer.trim();
+      scanBuffer = '';
+      if (v) handleScan(v);
+      e.preventDefault();
+    } else if (e.key.length === 1) {
+      scanBuffer += e.key;
+      clearTimeout(scanTimer);
+      scanTimer = setTimeout(() => { scanBuffer = ''; }, 300);
+    }
+  });
+
+  $('manual-in').addEventListener('keydown', e => { if (e.key === 'Enter') handleManual(); });
+
+  document.addEventListener('click', function(e) {
+    if (!settingsOpen && !e.target.closest('#settings-screen') && !e.target.closest('.settings-btn') && e.target.id !== 'manual-in') {
+      focusTrap();
+    }
+  });
+
+  loadCfg();
+  renderState(STATES.PRODUCT);
+  focusTrap();
+</script>
+</body>
+</html>
